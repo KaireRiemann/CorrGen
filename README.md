@@ -1,112 +1,81 @@
-# CorrGen C++：手动选点 → A* → 完整参数走廊
+# Differentiable Collision-Free Parametric Corridors
 
-启动地图后，在 RViz 手动选择起点和目标点，计算三维 A* 路径并生成覆盖全程的可微参数走廊。**不进行轨迹优化。** 交互参考 `ros1_ws/firi_benchmark` 的 `global_planning` 流程。
+A C++17 implementation of the paper's parametric corridor formulation, with ROS1 demos for interactive 3D path planning and corridor generation. This repository is an independent implementation and engineering extension; the authors' original implementation is linked below.
 
-## 直接运行
+**Original paper:** Jon Arrizabalaga, Zachary Manchester, and Markus Ryll, *Differentiable Collision-Free Parametric Corridors*, 2024 (accepted at IROS 2024).
 
-现有 Docker 容器 `ros1_noetic` 内：
+[Paper on arXiv](https://arxiv.org/abs/2407.12283) · [Full paper (PDF)](https://arxiv.org/pdf/2407.12283) · [Authors' original code](https://github.com/jonarriza96/corrgen) · [Map generator](https://github.com/KumarRobotics/kr_param_map)
 
-```bash
-source /root/ws/corr_gen/devel/setup.bash
-roslaunch corrgen_cpp medium.launch
+Select a start and a goal in RViz to compute a 3D A* path, construct a smooth reference, and generate a differentiable corridor along the entire route. The current pipeline produces a geometric feasible region; trajectory optimization and execution control are outside its scope.
+
+## Overview
+
+```text
+kr_param_map → occupancy voxels → interactive start/goal selection
+            → 26-connected A* → piecewise C² cubic B-spline reference
+            → cross-section intersections → global Chebyshev LP
+            → corridor validation → RViz visualization
 ```
 
-按以下顺序操作：
+The implementation provides:
 
-1. 等待地图出现、状态显示 `WAITING_FOR_START`。启动不会自动选点或生成路径。
-2. 点击 RViz 工具栏 **2D Nav Goal**，在自由空间点击并拖出箭头，设定起点（绿色球）。
-3. 再次点击 **2D Nav Goal**，选择目标点（红色球）。此时才开始 A* 和走廊生成。
-4. 橙色为完整 A*，青色为全程光滑参考，紫色为参数走廊。状态显示 `PASS` 后可继续选下一对起终点。
-5. 新一轮选点会清除旧路径和走廊。占据/越界点会提示 `INVALID_POINT`；无路或求解失败会提示原因，不保留旧走廊冒充新结果。
+- One global set of polynomial corridor coefficients, with offset elliptical cross-sections and analytical first and second derivatives.
+- HiGHS as the default LP backend, with ProxQP, GLPK, and optional real_planner SDLP alternatives.
+- Constraint generation with verification against the complete original intersection constraints.
+- Clearance-aware A*, reference smoothing, and conservative continuous checks against inflated occupied voxels and map boundaries.
+- A cancellable worker process, explicit computation budgets, request snapshots, and diagnostics.
+- Six interactive map presets, including sparse and dense structured environments.
 
-也可用 **2D Pose Estimate** 明确重设起点，再用 **2D Nav Goal** 指定目标。`Publish Point` 使用消息的实际 xyz（点到障碍表面通常会被拒绝）。当前不进行跨 frame 的 TF 转换，RViz Fixed Frame 必须为 `map`。
+## Build
 
-### 高度
+The tested setup uses ROS Noetic in the existing `ros1_noetic` Docker container. The host workspace `/home/diffbot/ros1_ws/corr_gen` is mounted at `/root/ws/corr_gen` in that container. Adjust paths for your installation; the helper script assumes this existing container and mount.
 
-- `sparse/medium/dense` 默认 `height_mode:=arrow`，与 FIRI 示例相同，箭头的旋转决定高度：`z_min + inset + |q_z| (z_size−2 inset)`，`inset=ceil((inflation+robot_radius+safety_margin+reference_clearance)/resolution)*resolution+resolution/2`。
-- `balls/multi_gap/maze` 默认固定高度 1.5 m，箭头方向不影响高度。
-- 所有 launch 都支持 `height_mode:=fixed height:=1.5`，避免手动调高度。
+The expected workspace layout is:
 
-例如：
-
-```bash
-roslaunch corrgen_cpp medium.launch height_mode:=fixed height:=1.5
+```text
+corr_gen/
+├── src/
+│   ├── CorrGen/          # This repository
+│   └── kr_param_map/     # Upstream map repository
+├── .deps/               # Local solver dependencies
+├── build/
+└── devel/
 ```
 
-## 地图入口
-
-每次运行一个；关闭 RViz 会同时结束本次 launch。
-
-| launch | 原版 kr_param_map 地图 |
-|---|---|
-| `sparse.launch` | 稀疏结构化三维地图 |
-| `medium.launch` | 中等密度结构化三维地图 |
-| `dense.launch` | 稠密结构化三维地图 |
-| `balls_demo.launch` | 圆柱障碍图像地图 |
-| `multi_gap_demo.launch` | 交错门图像地图 |
-| `maze_demo.launch` | 迷宫图像地图 |
-
-这些入口不包含固定起终点。结构化地图对齐 FIRI `global_planning.launch`：**50×50×5 m，原点 (-25,-25,0)，分辨率 0.25 m**，RViz 使用按 Z 高度着色的 Boxes。图像地图仍为 20×10×3 m、分辨率 0.2 m。旧 `sparse_demo/medium_demo/dense_demo.launch` 保留为相同配置的兼容入口。
+For a new source checkout:
 
 ```bash
-roslaunch corrgen_cpp sparse.launch
-roslaunch corrgen_cpp medium.launch
-roslaunch corrgen_cpp dense.launch
-# 等价的统一入口，可换随机种子及单独调整障碍物比例
-roslaunch corrgen_cpp global_planning.launch density:=dense map_seed:=1024
+mkdir -p ~/corr_gen/src
+cd ~/corr_gen/src
+git clone https://github.com/KaireRiemann/CorrGen.git CorrGen
+git clone https://github.com/KumarRobotics/kr_param_map.git kr_param_map
+# Map revision used for the recorded regression tests:
+git -C kr_param_map checkout 12dae849e05f28c9fbbcab2b3f18ba793fb536e2
 ```
 
-| 密度 | cylinder_ratio | poly_ratio | circle_ratio | ellip_ratio |
-|---|---:|---:|---:|---:|
-| sparse | 0.03 | 0.003 | 0 | 0 |
-| medium | 0.06 | 0.006 | 0 | 0 |
-| dense | 0.10 | 0.010 | 0.01 | 0.01 |
+Dependencies include Eigen3, GLPK, ROS Noetic, and nlohmann-json3-dev. The map generator also requires PCL, SDL 1.2, and SDL_image. The default demos use HiGHS 1.10.0; the ProxQP backend uses ProxSuite 0.6.3 C++ headers. `setup_solvers.sh` installs these solver dependencies under the workspace's `.deps`. Python/pip is used to obtain the headers, but corridor solving runs in C++.
 
-上游多面体生成使用独立 `random_device`，因此相同 `map_seed` 不保证点云逐点一致；每次地图更新会保存实际 `map_<version>.xyz`，请求快照引用该文件供复查。
-
-三档均为 `gate_ratio=0`、`w1/w2/w3=0.10/0.50/2.00`；这些是上游生成器的比例参数，不是固定障碍物个数。`global_planning.launch` 还支持 `map_size_x/y/z`、`map_x/y/z_origin`、`resolution` 和各比例参数。若改变分辨率，可在 RViz Map 显示中同步修改 Size (m)。
-
-通用地图可通过 `demo.launch` 的 `map_type`、`map`、`density`、`seed`、`size_x/y/z`、`resolution` 调整。`inflation` 为附加地图膨胀，默认 0；与 `robot_radius`（0.2 m）和 `safety_margin`（0.05 m）相加形成机体配置空间。`reference_clearance`（结构化地图 0.1 m、图像地图 0.05 m）用于搜索及参考圆滑时预留走廊宽度。`degree` 默认为 6。无桌面测试加 `rviz:=false`。
-
-## 求解、走廊宽度与预算
-
-当前默认 `solver:=highs`，保持 6 阶、35 变量。已删除上一版的全局缩小循环：碰撞点反馈成 LP 新约束重新优化，只有完整实体检查通过才发布 `FEASIBLE_BODY_CONSTRAINED`。检查保留椭圆方向和偏移，避免用大球包住扁长截面造成误拒绝。`shrink_factor=1`，不会靠缩成细管取得 PASS。
-
-A* 默认 `clearance_weight:=4`，倾向有净空的路径；路径简化同时保留此代价。设为 0 可对照纯长度路径，但贴障路线可能限制后续走廊宽度。机器人半径和安全裕量仍参与占据体素膨胀，额外几何切点采用最多 1 cm 内法向裕量。
-
-```bash
-roslaunch corrgen_cpp dense.launch
-roslaunch corrgen_cpp dense.launch solver:=proxqp
-```
-
-默认 `job_budget_ms:=5000`，覆盖整个 worker；`solver_budget_ms:=1000` 是每次内层 LP 预算。六地图正反向回归完整耗时约 1.6–3.7 秒。更宽的实体走廊需要更多几何迭代，不能再用旧版亚秒细管的耗时代表本版。超时且无完整验证结果时失败，不发布旧走廊或缩小初值。reset、新起点、地图变化会回收旧进程并清空输出。
-
-质量对比、连续检查推导和剩余限制见 [走廊质量修正](docs/quality_repair.md)。历史求解加速对比保留在 [上一版工程报告](docs/engineering_delivery.md)。
-
-## 构建
-
-宿主机工作空间：`/home/diffbot/ros1_ws/corr_gen`；容器挂载位置：`/root/ws/corr_gen`。
+From the host, using the tested container layout:
 
 ```bash
 cd /home/diffbot/ros1_ws/corr_gen
 bash src/CorrGen/scripts/build_ros1.sh ros1_noetic
 ```
 
-或在容器内：
+Alternatively, inside a ROS Noetic environment with the dependencies installed:
 
 ```bash
 source /opt/ros/noetic/setup.bash
-cd /root/ws/corr_gen
-bash src/CorrGen/scripts/setup_solvers.sh /root/ws/corr_gen
+cd /root/ws/corr_gen  # Replace with your workspace path.
+workspace="$PWD"
+bash src/CorrGen/scripts/setup_solvers.sh "$workspace"
 catkin_make -DCMAKE_BUILD_TYPE=Release -DCORRGEN_BUILD_ROS1=ON \
-  -DCMAKE_PREFIX_PATH="/root/ws/corr_gen/.deps/highs;/opt/ros/noetic" \
-  -DPROXQP_INCLUDE_DIR=/root/ws/corr_gen/.deps/proxsuite/cmeel.prefix/include -j2
-cd build/CorrGen && ctest --output-on-failure
+  -DCMAKE_PREFIX_PATH="$workspace/.deps/highs;/opt/ros/noetic" \
+  -DPROXQP_INCLUDE_DIR="$workspace/.deps/proxsuite/cmeel.prefix/include" -j2
+(cd build/CorrGen && ctest --output-on-failure)
 ```
 
-依赖：Eigen3、GLPK、ROS Noetic、nlohmann-json3-dev。默认 demo 另需 HiGHS 1.10.0，ProxQP 对比需 ProxSuite 0.6.3 的 C++ 头文件；脚本在工作空间 `.deps` 隔离安装它及 HiGHS 1.10.0，C++ 求解过程不调用 Python。上游地图还需要 PCL、SDL1.2、SDL_image。当前容器已安装并编译通过。上游 `src/kr_param_map` 未修改，commit `12dae849e05f28c9fbbcab2b3f18ba793fb536e2`。
-
-纯 C++：
+For the standalone C++ core, with Eigen3 and GLPK installed:
 
 ```bash
 cmake -S src/CorrGen -B src/CorrGen/build -DCMAKE_BUILD_TYPE=Release
@@ -114,39 +83,135 @@ cmake --build src/CorrGen/build -j2
 ctest --test-dir src/CorrGen/build --output-on-failure
 ```
 
-当前宿主 GLPK 位于 `.deps/usr`，配置需增加 `-DCMAKE_PREFIX_PATH=/home/diffbot/ros1_ws/corr_gen/.deps/usr` 和相应 `CMAKE_BUILD_RPATH`；运行时将 `.deps/usr/lib/x86_64-linux-gnu` 加入 `LD_LIBRARY_PATH`。不要在 Ubuntu 20.04 容器中加载宿主 Ubuntu 24.04 库。
+Add the HiGHS prefix and ProxSuite include path above to enable those optional backends. In the existing host setup, GLPK is unpacked under `.deps/usr`; host builds require that prefix and the corresponding library search path. Do not load host Ubuntu 24.04 libraries into the Ubuntu 20.04 ROS container.
 
-## 流程与代码
+## Interactive demos
 
-`原版地图节点 → 占据体素 → 手动选择两点 → 26 邻域 A* → 全程 C² 三次 B-spline 参考 → 全部横截面交点 → 全局 Chebyshev LP → 检查 → 可视化`
+Inside the configured ROS environment:
 
-- `voxel_planner.*`：三维 A*，禁止穿占据角；可见性简化、局部圆滑和递归 Bézier 包围盒检查。支持反向、多转弯、不同高度和同一自由体素内的不同起终点。
-- `path.*`：任意方向的三次段和分段 C² 参考；统一 u∈[0,1]，精确保留两端。标架使用整条路径共同的非退化参考轴，支持竖直段。
-- `corridor.*`、`generator.cpp`：论文 3D 对角占优 LP、一二阶解析导数、浮点 Bernstein 正定认证。只有一组全局走廊系数，不将独立截面拼接成假连续走廊。
-- `solver.cpp` / `proxqp_adapter.cpp`：统一 LP 后端与有限工作集求解。
-- `apps/worker.cpp`：快照读取、规划、并行全投影、求解、连续体素包围检查、原子结果文件。
-- `ros/demo_node.cpp`：地图缓存、选点状态、worker 进程生命周期、预算、清除旧结果和可视化。
-- `launch/`、`rviz/`：六个交互地图入口，未接入轨迹优化器。
+```bash
+source /root/ws/corr_gen/devel/setup.bash
+roslaunch corrgen_cpp medium.launch
+```
 
-旧的“固定起终点、x 必须递增、单条三次曲线拟合整个 A*”demo 已替换，旧平面拟合器已移除。参考曲线光滑化属于走廊的几何参数化，不是时间参数化或动力学轨迹优化。
+1. Wait for the map and the `WAITING_FOR_START` status. No endpoints are selected automatically.
+2. Use **2D Nav Goal** to select the start in free space. It appears as a green sphere.
+3. Use **2D Nav Goal** again to select the goal, shown as a red sphere. This starts planning and corridor generation.
+4. Inspect the orange A* path, cyan reference curve, and purple corridor. After `PASS`, select another pair of endpoints.
+5. A new selection clears the previous output. Occupied or out-of-bounds inputs report `INVALID_POINT`; planning failures report their cause.
 
-## 验证与结果
+Use **2D Pose Estimate** to explicitly reset the start, followed by **2D Nav Goal** for the goal. **Publish Point** uses the actual message xyz coordinates; clicking an obstacle surface will usually produce an invalid point. Set the RViz Fixed Frame to `map`; the input interface does not transform between frames.
+
+### Selection height
+
+Structured maps default to `height_mode:=arrow`, following the local FIRI benchmark interaction: arrow rotation determines height as `z_min + inset + |q_z| * (z_size - 2 * inset)`, where `inset = ceil((inflation + robot_radius + safety_margin + reference_clearance) / resolution) * resolution + resolution / 2`.
+
+Image-based maps default to a fixed height of 1.5 m. Every launch supports explicit fixed-height selection:
+
+```bash
+roslaunch corrgen_cpp medium.launch height_mode:=fixed height:=1.5
+```
+
+### Map presets
+
+Run one launch at a time. Closing RViz also terminates its launch session.
+
+| Launch | Environment |
+|---|---|
+| `sparse.launch` | Sparse structured 3D obstacles |
+| `medium.launch` | Medium-density structured 3D obstacles |
+| `dense.launch` | Dense structured 3D obstacles |
+| `balls_demo.launch` | Image-based cylindrical obstacles |
+| `multi_gap_demo.launch` | Image-based staggered openings |
+| `maze_demo.launch` | Image-based maze |
+
+Structured maps use a **50 × 50 × 5 m** volume, origin **(-25, -25, 0)**, and **0.25 m** resolution. RViz displays boxes colored by height. Image-based maps use a 20 × 10 × 3 m volume and 0.2 m resolution. The `sparse_demo.launch`, `medium_demo.launch`, and `dense_demo.launch` names remain as compatibility entry points.
+
+```bash
+roslaunch corrgen_cpp sparse.launch
+roslaunch corrgen_cpp dense.launch
+# Unified entry point with an explicit map seed:
+roslaunch corrgen_cpp global_planning.launch density:=dense map_seed:=1024
+```
+
+| Density | cylinder_ratio | poly_ratio | circle_ratio | ellip_ratio |
+|---|---:|---:|---:|---:|
+| sparse | 0.03 | 0.003 | 0 | 0 |
+| medium | 0.06 | 0.006 | 0 | 0 |
+| dense | 0.10 | 0.010 | 0.01 | 0.01 |
+
+All three presets use `gate_ratio=0` and `w1/w2/w3=0.10/0.50/2.00`. These are upstream generator parameters, not fixed obstacle counts. The upstream polyhedron generator uses an independent `random_device`, so a fixed `map_seed` does not guarantee identical point clouds. Actual maps are saved as `map_<version>.xyz` for replay.
+
+`global_planning.launch` also accepts `map_size_x/y/z`, `map_x/y/z_origin`, `resolution`, and individual obstacle ratios. Update the RViz Map display's Size (m) when changing resolution. The generic `demo.launch` exposes `map_type`, `map`, `density`, `seed`, `size_x/y/z`, and `resolution`. Use `rviz:=false` for headless runs.
+
+## Solvers, clearance, and budgets
+
+The default is `solver:=highs`, with degree 6 and 35 global LP variables. Collision witnesses are added as constraints for re-optimization. The ROS pipeline does not uniformly shrink the corridor to obtain a passing result: `shrink_factor=1`. A validated output is labeled `FEASIBLE_BODY_CONSTRAINED`; it should not be interpreted as the optimum of the original finite-point LP.
+
+```bash
+roslaunch corrgen_cpp dense.launch
+roslaunch corrgen_cpp dense.launch solver:=proxqp
+```
+
+A* uses `clearance_weight:=4` by default, and path simplification preserves this cost preference. Set it to 0 to compare with length-based search. `inflation` defaults to 0 and adds to `robot_radius` (0.2 m) and `safety_margin` (0.05 m) when constructing configuration-space obstacles. `reference_clearance` reserves additional room during search and smoothing: 0.1 m for structured maps and 0.05 m for image-based maps. Geometric cutting points use an inward normal margin of at most 1 cm.
+
+The default `job_budget_ms:=5000` covers the entire worker; `solver_budget_ms:=1000` limits each inner LP call. Recorded forward/reverse regressions across six maps took approximately **1.6–3.7 seconds end to end**. These measurements are specific to the recorded setup, not a real-time guarantee. Earlier subsecond measurements used a different corridor pipeline and do not describe the current geometry checks.
+
+Timeouts without a fully validated result report failure. Resetting, selecting a new start, or changing the map cancels the old worker and clears stale output. See the [corridor quality report](docs/quality_repair.md) and the [historical solver engineering report](docs/engineering_delivery.md) for measurements and limitations.
+
+## Code structure
+
+| Location | Responsibility |
+|---|---|
+| `include/corrgen/`, `src/corridor.*`, `src/generator.cpp` | Global corridor model, analytical derivatives, LP construction, and positive-definiteness checks |
+| `src/corridor_check.cpp` | Continuous corridor geometry checks |
+| `src/voxel_planner.cpp` | 3D A*, clearance cost, path simplification, and reference smoothing |
+| `src/path.cpp` | Piecewise C² reference geometry, frames, and parameterization on u ∈ [0,1] |
+| `src/solver.cpp`, `src/*adapter*` | Solver backends and working-set optimization |
+| `apps/worker.cpp` | Snapshot loading, planning, projection, solving, checking, and result export |
+| `ros/demo_node.cpp` | Map cache, interactive selection, worker lifecycle, and visualization |
+| `launch/`, `rviz/` | Interactive demo configuration |
+| `scripts/`, `tests/` | Dependency setup, replay, regressions, and core tests |
+
+The reference preserves both selected endpoints and supports reverse travel, multiple turns, and different heights. Reference smoothing is geometric preparation, not time parameterization or dynamic trajectory optimization.
+
+## Validation and recorded outputs
 
 ```bash
 docker exec ros1_noetic bash -lc \
   'source /root/ws/corr_gen/devel/setup.bash; python3 /root/ws/corr_gen/src/CorrGen/scripts/test_ros1_demos.py'
 ```
 
-回归脚本使用独立 master 11347，并向与 RViz 相同的话题发布两点，检查等待选点、完整路径端点、正向/反向、重复规划、非法点、旧结果清除、显式起点和 reset。详见 [当前交互验证报告](docs/interactive.md)。
+The regression script uses a separate ROS master on port 11347 and publishes to the same selection topics as RViz. It checks waiting for selection, endpoint preservation, forward/reverse requests, repeated planning, invalid inputs, stale-output removal, explicit start selection, and reset behavior.
 
-手动运行输出在 `results/live/<scene>/run_<time>_<pid>/request_<id>/`，自动回归在 `results/interactive/<scene>/run_<time>_<pid>/`。启动会创建独立目录，不覆盖前一次运行。`request.json` 记录地图快照路径、hash、端点、配置；结果包含 A*、参考曲线、Bézier 控制点、标架轴、系数和指标。失败、超时及取消也保存 `completion.json` 或 `failure.json`。当前目录可用 `rosparam get /corrgen_demo/session_dir` 查询。
-
-话题：`/corrgen_demo/map`、`astar_path`、`reference_path`、`corridor`、`selection`、`status`、`diagnostics`。清空选择：
+Manual sessions write to `results/live/<scene>/run_<time>_<pid>/request_<id>/`; automated sessions write under `results/interactive/<scene>/run_<time>_<pid>/`. Each session has a separate directory. `request.json` records the map snapshot, hash, endpoints, and configuration. Results contain the A* path, reference, Bézier control points, frame axis, corridor coefficients, and metrics. Failures, timeouts, and cancellations also produce `completion.json` or `failure.json`.
 
 ```bash
+rosparam get /corrgen_demo/session_dir
 rostopic pub -1 /corrgen_demo/reset std_msgs/Empty '{}'
 ```
 
-[编码约束](coding.md) · [数学与论文差异](docs/method.md) · [SDLP 对比](docs/solver.md)
+Published topics under `/corrgen_demo/` include `map`, `astar_path`, `reference_path`, `corridor`, `selection`, `status`, and `diagnostics`.
 
-走廊验收增加了连续参数区间的保守包围检查，覆盖膨胀占据体素及地图边界；默认将机器人按 0.2 m 包围球处理，加 0.05 m 裕量。认证使用带舍入保护的浮点 Bernstein 界，不是形式化区间算术证明。安全性依赖输入地图对环境的覆盖；未观测且没有点的体素按自由空间处理。该输出是几何可行域，尚未包含轨迹优化、动力学、定位误差模型或执行控制。旧离线实验与旧同步节点耗时不代表当前流程，当前结果见 [走廊质量修正](docs/quality_repair.md)。
+Additional documentation (currently in Chinese): [coding conventions](coding.md), [mathematical formulation and differences from the paper](docs/method.md), [interactive validation](docs/interactive.md), [SDLP comparison](docs/solver.md), and [corridor quality repair](docs/quality_repair.md).
+
+### Scope and limitations
+
+Continuous acceptance checks conservatively bound the corridor against inflated occupied voxels and map boundaries. The implementation uses floating-point Bernstein bounds with rounding guards, not a formal interval-arithmetic proof. Safety depends on map coverage: unobserved voxels without points are treated as free space. The current output does not account for dynamics, localization uncertainty, or execution control. Solver-only timings from the paper or earlier experiments are not directly comparable to the complete ROS pipeline.
+
+## Citation and acknowledgments
+
+Please cite the original paper when using its corridor formulation. The following citation is provided by the [authors' repository](https://github.com/jonarriza96/corrgen):
+
+```bibtex
+@article{arrizabalaga2024differentiable,
+  title={Differentiable Collision-Free Parametric Corridors},
+  author={Arrizabalaga, Jon and Manchester, Zachary and Ryll, Markus},
+  journal={arXiv preprint arXiv:2407.12283},
+  year={2024}
+}
+```
+
+- **Original research and implementation:** We thank Jon Arrizabalaga, Zachary Manchester, and Markus Ryll for the [paper](https://arxiv.org/abs/2407.12283) and the open-source [jonarriza96/corrgen](https://github.com/jonarriza96/corrgen) implementation, which provide the foundation for this C++ implementation.
+- **Benchmark maps:** We thank **Kumar Robotics** and the contributors to [KumarRobotics/kr_param_map](https://github.com/KumarRobotics/kr_param_map) for the parameterized map generator used in the ROS demos and evaluations. The upstream map source is maintained separately and was not modified for the reported tests.
+- **Numerical software:** We acknowledge HiGHS, ProxSuite/ProxQP, GLPK, and Eigen, as well as the real_planner SDLP implementation used for optional comparisons.
