@@ -1,0 +1,254 @@
+[
+  {
+    "scene": "sparse",
+    "source": "results/interactive_highs/sparse/run_1793097451010443536_656589/request_1/metrics.json",
+    "request": 1,
+    "map_hash": "ad723ab6b3432e2a",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.3405166019772173,
+    "geometry_rounds": 13,
+    "geometry_constraints": 3970,
+    "completion": {
+      "first_publish_ms": 1845.283983,
+      "map_version": 1,
+      "request": 1,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 1846.473163,
+      "worker_peak_rss_kib": 53964
+    }
+  },
+  {
+    "scene": "sparse",
+    "source": "results/interactive_highs/sparse/run_1793097451010443536_656589/request_2/metrics.json",
+    "request": 2,
+    "map_hash": "ad723ab6b3432e2a",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.3398728300059576,
+    "geometry_rounds": 10,
+    "geometry_constraints": 4125,
+    "completion": {
+      "first_publish_ms": 1673.61199,
+      "map_version": 1,
+      "request": 2,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 1675.274259,
+      "worker_peak_rss_kib": 45432
+    }
+  },
+  {
+    "scene": "medium",
+    "source": "results/interactive_highs/medium/run_1793097458169277117_656756/request_1/metrics.json",
+    "request": 1,
+    "map_hash": "f6d8c3dbe13c487b",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.2939242374063369,
+    "geometry_rounds": 15,
+    "geometry_constraints": 3534,
+    "completion": {
+      "first_publish_ms": 2623.70494,
+      "map_version": 1,
+      "request": 1,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 2625.648839,
+      "worker_peak_rss_kib": 67104
+    }
+  },
+  {
+    "scene": "medium",
+    "source": "results/interactive_highs/medium/run_1793097458169277117_656756/request_2/metrics.json",
+    "request": 2,
+    "map_hash": "f6d8c3dbe13c487b",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.30728883880709046,
+    "geometry_rounds": 12,
+    "geometry_constraints": 3564,
+    "completion": {
+      "first_publish_ms": 1802.44245,
+      "map_version": 1,
+      "request": 2,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 1803.59579,
+      "worker_peak_rss_kib": 65172
+    }
+  },
+  {
+    "scene": "dense",
+    "source": "results/interactive_highs/dense/run_1793097466518877618_656960/request_1/metrics.json",
+    "request": 1,
+    "map_hash": "eeea7771295921fd",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.10738732369451572,
+    "geometry_rounds": 13,
+    "geometry_constraints": 3715,
+    "completion": {
+      "first_publish_ms": 3137.897907,
+      "map_version": 1,
+      "request": 1,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 3139.040766,
+      "worker_peak_rss_kib": 111348
+    }
+  },
+  {
+    "scene": "dense",
+    "source": "results/interactive_highs/dense/run_1793097466518877618_656960/request_2/metrics.json",
+    "request": 2,
+    "map_hash": "eeea7771295921fd",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.10363816752711463,
+    "geometry_rounds": 13,
+    "geometry_constraints": 3464,
+    "completion": {
+      "first_publish_ms": 2799.140022,
+      "map_version": 1,
+      "request": 2,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 2800.454521,
+      "worker_peak_rss_kib": 109116
+    }
+  },
+  {
+    "scene": "balls",
+    "source": "results/interactive_highs/balls/run_1793097476579958563_657134/request_1/metrics.json",
+    "request": 1,
+    "map_hash": "6dba181e570f1349",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.3442958341283753,
+    "geometry_rounds": 18,
+    "geometry_constraints": 3763,
+    "completion": {
+      "first_publish_ms": 2129.496413,
+      "map_version": 1,
+      "request": 1,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 2130.455053,
+      "worker_peak_rss_kib": 41164
+    }
+  },
+  {
+    "scene": "balls",
+    "source": "results/interactive_highs/balls/run_1793097476579958563_657134/request_2/metrics.json",
+    "request": 2,
+    "map_hash": "6dba181e570f1349",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.3887916619571428,
+    "geometry_rounds": 13,
+    "geometry_constraints": 3566,
+    "completion": {
+      "first_publish_ms": 1610.902224,
+      "map_version": 1,
+      "request": 2,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 1611.803034,
+      "worker_peak_rss_kib": 42380
+    }
+  },
+  {
+    "scene": "multi_gap",
+    "source": "results/interactive_highs/multi_gap/run_1793097487935944697_657308/request_1/metrics.json",
+    "request": 1,
+    "map_hash": "17151e5f06abdc3a",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.4826422540052156,
+    "geometry_rounds": 17,
+    "geometry_constraints": 6358,
+    "completion": {
+      "first_publish_ms": 3036.070799,
+      "map_version": 1,
+      "request": 1,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 3037.148669,
+      "worker_peak_rss_kib": 37728
+    }
+  },
+  {
+    "scene": "multi_gap",
+    "source": "results/interactive_highs/multi_gap/run_1793097487935944697_657308/request_2/metrics.json",
+    "request": 2,
+    "map_hash": "17151e5f06abdc3a",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.43672390135872513,
+    "geometry_rounds": 18,
+    "geometry_constraints": 6586,
+    "completion": {
+      "first_publish_ms": 3687.818644,
+      "map_version": 1,
+      "request": 2,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 3689.357984,
+      "worker_peak_rss_kib": 39816
+    }
+  },
+  {
+    "scene": "maze",
+    "source": "results/interactive_highs/maze/run_1793097502342796286_657478/request_1/metrics.json",
+    "request": 1,
+    "map_hash": "24df6bdcf7f8d46b",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.13259206697579182,
+    "geometry_rounds": 19,
+    "geometry_constraints": 4102,
+    "completion": {
+      "first_publish_ms": 2708.178342,
+      "map_version": 1,
+      "request": 1,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 2709.019542,
+      "worker_peak_rss_kib": 34824
+    }
+  },
+  {
+    "scene": "maze",
+    "source": "results/interactive_highs/maze/run_1793097502342796286_657478/request_2/metrics.json",
+    "request": 2,
+    "map_hash": "24df6bdcf7f8d46b",
+    "quality": "FEASIBLE_BODY_CONSTRAINED",
+    "shrink_factor": 1.0,
+    "sampled_min_semiaxis_m": 0.13224773678763654,
+    "geometry_rounds": 19,
+    "geometry_constraints": 4389,
+    "completion": {
+      "first_publish_ms": 1967.628634,
+      "map_version": 1,
+      "request": 2,
+      "status": "FEASIBLE_BODY_CONSTRAINED",
+      "timeout": false,
+      "wait_status": 0,
+      "wall_ms": 1968.468243,
+      "worker_peak_rss_kib": 35052
+    }
+  }
+]

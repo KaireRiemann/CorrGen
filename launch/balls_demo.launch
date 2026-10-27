@@ -1,0 +1,36 @@
+<launch>
+  <arg name="rviz" default="true"/>
+  <arg name="solver" default="highs"/>
+  <arg name="robot_radius" default="0.2"/>
+  <arg name="safety_margin" default="0.05"/>
+  <arg name="job_budget_ms" default="5000"/>
+  <arg name="solver_budget_ms" default="1000"/>
+  <arg name="projection_threads" default="4"/>
+  <arg name="working_set" default="true"/>
+  <arg name="clearance_weight" default="4.0"/>
+  <arg name="reference_clearance" default="0.05"/>
+  <arg name="degree" default="6"/>
+  <arg name="height" default="1.5"/>
+  <arg name="height_mode" default="fixed"/>
+  <arg name="inflation" default="0.0"/>
+  <arg name="output_dir" default="$(find corrgen_cpp)/results/live/balls"/>
+  <include file="$(find corrgen_cpp)/launch/demo.launch">
+    <arg name="map_type" value="image"/>
+    <arg name="map" value="balls"/>
+    <arg name="rviz" value="$(arg rviz)"/>
+    <arg name="solver" value="$(arg solver)"/>
+    <arg name="robot_radius" value="$(arg robot_radius)"/>
+    <arg name="safety_margin" value="$(arg safety_margin)"/>
+    <arg name="job_budget_ms" value="$(arg job_budget_ms)"/>
+    <arg name="solver_budget_ms" value="$(arg solver_budget_ms)"/>
+    <arg name="projection_threads" value="$(arg projection_threads)"/>
+    <arg name="working_set" value="$(arg working_set)"/>
+    <arg name="clearance_weight" value="$(arg clearance_weight)"/>
+    <arg name="reference_clearance" value="$(arg reference_clearance)"/>
+    <arg name="degree" value="$(arg degree)"/>
+    <arg name="height" value="$(arg height)"/>
+    <arg name="height_mode" value="$(arg height_mode)"/>
+    <arg name="inflation" value="$(arg inflation)"/>
+    <arg name="output_dir" value="$(arg output_dir)"/>
+  </include>
+</launch>

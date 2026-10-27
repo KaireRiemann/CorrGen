@@ -1,0 +1,70 @@
+<launch>
+  <arg name="map" default="balls"/>
+  <arg name="map_type" default="image"/>
+  <arg name="density" default="medium"/>
+  <arg name="seed" default="1024"/>
+  <arg name="rviz" default="true"/>
+  <arg name="solver" default="highs"/>
+  <arg name="robot_radius" default="0.2"/>
+  <arg name="safety_margin" default="0.05"/>
+  <arg name="job_budget_ms" default="5000"/>
+  <arg name="solver_budget_ms" default="1000"/>
+  <arg name="projection_threads" default="4"/>
+  <arg name="working_set" default="true"/>
+  <arg name="clearance_weight" default="4.0"/>
+  <arg name="reference_clearance" default="0.1"/>
+  <arg name="degree" default="6"/>
+  <arg name="resolution" default="0.2"/>
+  <arg name="inflation" default="0.0"/>
+  <arg name="height" default="1.5"/>
+  <arg name="height_mode" default="fixed"/>
+  <arg name="size_x" default="20.0"/><arg name="size_y" default="10.0"/><arg name="size_z" default="3.0"/>
+  <arg name="origin_x" default="0.0"/><arg name="origin_y" default="0.0"/><arg name="origin_z" default="0.0"/>
+  <arg name="rviz_config" default="$(find corrgen_cpp)/rviz/demo.rviz"/>
+  <arg name="cylinder_ratio" default="$(eval 0.03 if arg('density') == 'sparse' else (0.10 if arg('density') == 'dense' else 0.06))"/>
+  <arg name="circle_ratio" default="$(eval 0.01 if arg('density') == 'dense' else 0.0)"/>
+  <arg name="gate_ratio" default="0.0"/>
+  <arg name="ellip_ratio" default="$(eval 0.01 if arg('density') == 'dense' else 0.0)"/>
+  <arg name="poly_ratio" default="$(eval 0.003 if arg('density') == 'sparse' else (0.010 if arg('density') == 'dense' else 0.006))"/>
+  <arg name="w1" default="0.10"/>
+  <arg name="w2" default="0.50"/>
+  <arg name="w3" default="2.00"/>
+  <arg name="output_dir" default="$(eval find('corrgen_cpp') + '/results/interactive/' + (arg('map') if arg('map_type') == 'image' else arg('density')))"/>
+  <node pkg="param_env" type="$(eval 'read_grid_map' if arg('map_type') == 'image' else 'structure_map')" name="map_generator" output="screen">
+    <remap from="~global_cloud" to="/corrgen_map/cloud"/>
+    <param name="map/x_size" value="$(arg size_x)"/><param name="map/y_size" value="$(arg size_y)"/><param name="map/z_size" value="$(arg size_z)"/>
+    <param name="map/x_origin" value="$(arg origin_x)"/><param name="map/y_origin" value="$(arg origin_y)"/><param name="map/z_origin" value="$(arg origin_z)"/>
+    <param name="map/resolution" value="$(arg resolution)"/><param name="map/frame_id" value="map"/>
+    <param name="map/mode" value="1"/><param name="use_folder" value="false"/>
+    <param name="map/publish_grid_centers" value="false"/><param name="map/inflate_radius" value="0.0"/>
+    <param name="map/auto_change" value="false"/><param name="map/simple_2d" value="false"/>
+    <param name="img/negate" value="0"/><param name="img/occ_th" value="0.6"/>
+    <param name="file_path" value="$(find param_env)/data/img/all/$(arg map).png"/>
+    <param name="params/cylinder_ratio" value="$(arg cylinder_ratio)"/>
+    <param name="params/circle_ratio" value="$(arg circle_ratio)"/><param name="params/gate_ratio" value="$(arg gate_ratio)"/>
+    <param name="params/ellip_ratio" value="$(arg ellip_ratio)"/><param name="params/poly_ratio" value="$(arg poly_ratio)"/>
+    <param name="params/w1" value="$(arg w1)"/><param name="params/w2" value="$(arg w2)"/><param name="params/w3" value="$(arg w3)"/>
+    <param name="params/add_noise" value="false"/><param name="params/seed" value="$(arg seed)"/>
+    <param name="clear_pos" value="false"/><param name="dataset/save_map" value="false"/>
+    <param name="dataset/samples_num" value="0"/><param name="dyn/dyn_mode" value="false"/>
+  </node>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="corrgen_map_frame" args="0 0 0 0 0 0 world map"/>
+  <node pkg="corrgen_cpp" type="corrgen_demo_node" name="corrgen_demo" output="screen">
+    <remap from="~cloud" to="/corrgen_map/cloud"/>
+    <rosparam param="origin" subst_value="true">[$(arg origin_x), $(arg origin_y), $(arg origin_z)]</rosparam>
+    <rosparam param="size" subst_value="true">[$(arg size_x), $(arg size_y), $(arg size_z)]</rosparam>
+    <param name="resolution" value="$(arg resolution)"/><param name="inflation" value="$(arg inflation)"/>
+    <param name="height" value="$(arg height)"/><param name="height_mode" value="$(arg height_mode)"/>
+    <param name="solver" value="$(arg solver)"/>
+    <param name="robot_radius" value="$(arg robot_radius)"/>
+    <param name="safety_margin" value="$(arg safety_margin)"/>
+    <param name="job_budget_ms" value="$(arg job_budget_ms)"/>
+    <param name="solver_budget_ms" value="$(arg solver_budget_ms)"/>
+    <param name="projection_threads" value="$(arg projection_threads)"/>
+    <param name="working_set" value="$(arg working_set)"/>
+    <param name="clearance_weight" value="$(arg clearance_weight)"/>
+    <param name="reference_clearance" value="$(arg reference_clearance)"/>
+    <param name="degree" value="$(arg degree)"/><param name="output_dir" value="$(arg output_dir)"/>
+  </node>
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="corrgen_rviz" required="true" args="-d $(arg rviz_config)"/>
+</launch>

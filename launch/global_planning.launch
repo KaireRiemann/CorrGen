@@ -1,0 +1,71 @@
+<launch>
+  <!-- Map geometry and density presets follow firi_benchmark/global_planning.launch. -->
+  <arg name="density" default="medium"/>
+  <arg name="map_seed" default="1024"/>
+  <arg name="rviz" default="true"/>
+  <arg name="solver" default="highs"/>
+  <arg name="robot_radius" default="0.2"/>
+  <arg name="safety_margin" default="0.05"/>
+  <arg name="job_budget_ms" default="5000"/>
+  <arg name="solver_budget_ms" default="1000"/>
+  <arg name="projection_threads" default="4"/>
+  <arg name="working_set" default="true"/>
+  <arg name="clearance_weight" default="4.0"/>
+  <arg name="reference_clearance" default="0.1"/>
+  <arg name="degree" default="6"/>
+  <arg name="resolution" default="0.25"/>
+  <arg name="inflation" default="0.0"/>
+  <arg name="height" default="1.5"/>
+  <arg name="height_mode" default="arrow"/>
+  <arg name="map_size_x" default="50.0"/>
+  <arg name="map_size_y" default="50.0"/>
+  <arg name="map_size_z" default="5.0"/>
+  <arg name="map_x_origin" default="-25.0"/>
+  <arg name="map_y_origin" default="-25.0"/>
+  <arg name="map_z_origin" default="0.0"/>
+  <arg name="cylinder_ratio" default="$(eval 0.03 if arg('density') == 'sparse' else (0.10 if arg('density') == 'dense' else 0.06))"/>
+  <arg name="circle_ratio" default="$(eval 0.01 if arg('density') == 'dense' else 0.0)"/>
+  <arg name="gate_ratio" default="0.0"/>
+  <arg name="ellip_ratio" default="$(eval 0.01 if arg('density') == 'dense' else 0.0)"/>
+  <arg name="poly_ratio" default="$(eval 0.003 if arg('density') == 'sparse' else (0.010 if arg('density') == 'dense' else 0.006))"/>
+  <arg name="w1" default="0.10"/>
+  <arg name="w2" default="0.50"/>
+  <arg name="w3" default="2.00"/>
+  <arg name="output_dir" default="$(eval find('corrgen_cpp') + '/results/live/' + arg('density'))"/>
+  <include file="$(find corrgen_cpp)/launch/demo.launch">
+    <arg name="map_type" value="structure"/>
+    <arg name="rviz_config" value="$(find corrgen_cpp)/rviz/structure.rviz"/>
+    <arg name="density" value="$(arg density)"/>
+    <arg name="seed" value="$(arg map_seed)"/>
+    <arg name="rviz" value="$(arg rviz)"/>
+    <arg name="solver" value="$(arg solver)"/>
+    <arg name="robot_radius" value="$(arg robot_radius)"/>
+    <arg name="safety_margin" value="$(arg safety_margin)"/>
+    <arg name="job_budget_ms" value="$(arg job_budget_ms)"/>
+    <arg name="solver_budget_ms" value="$(arg solver_budget_ms)"/>
+    <arg name="projection_threads" value="$(arg projection_threads)"/>
+    <arg name="working_set" value="$(arg working_set)"/>
+    <arg name="clearance_weight" value="$(arg clearance_weight)"/>
+    <arg name="reference_clearance" value="$(arg reference_clearance)"/>
+    <arg name="degree" value="$(arg degree)"/>
+    <arg name="resolution" value="$(arg resolution)"/>
+    <arg name="inflation" value="$(arg inflation)"/>
+    <arg name="height" value="$(arg height)"/>
+    <arg name="height_mode" value="$(arg height_mode)"/>
+    <arg name="size_x" value="$(arg map_size_x)"/>
+    <arg name="size_y" value="$(arg map_size_y)"/>
+    <arg name="size_z" value="$(arg map_size_z)"/>
+    <arg name="origin_x" value="$(arg map_x_origin)"/>
+    <arg name="origin_y" value="$(arg map_y_origin)"/>
+    <arg name="origin_z" value="$(arg map_z_origin)"/>
+    <arg name="cylinder_ratio" value="$(arg cylinder_ratio)"/>
+    <arg name="circle_ratio" value="$(arg circle_ratio)"/>
+    <arg name="gate_ratio" value="$(arg gate_ratio)"/>
+    <arg name="ellip_ratio" value="$(arg ellip_ratio)"/>
+    <arg name="poly_ratio" value="$(arg poly_ratio)"/>
+    <arg name="w1" value="$(arg w1)"/>
+    <arg name="w2" value="$(arg w2)"/>
+    <arg name="w3" value="$(arg w3)"/>
+    <arg name="output_dir" value="$(arg output_dir)"/>
+  </include>
+</launch>

@@ -1,0 +1,43 @@
+{
+  "map": "param_env/data/img/all/multi_gap.png",
+  "size": [
+    20,
+    10,
+    3
+  ],
+  "origin": [
+    0,
+    0,
+    0
+  ],
+  "resolution": 0.2,
+  "threshold": 0.6,
+  "negate": 0,
+  "controls": [
+    [
+      0.3,
+      2,
+      1.5
+    ],
+    [
+      2.8,
+      1,
+      1.5
+    ],
+    [
+      5.3,
+      9,
+      1.5
+    ],
+    [
+      8,
+      8,
+      1.5
+    ]
+  ],
+  "degrees": [
+    3,
+    6
+  ],
+  "seed": 42
+}
